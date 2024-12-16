@@ -79,7 +79,7 @@ final class ProjectGraph
         if (count($affectedProjects) > 0) {
             foreach ($graph->getVertices() as $vertex) {
                 if (in_array($vertex->getId(), $affectedProjects)) {
-                    $vertex->setAttribute('graphviz.bgcolor', 'pink');
+                    $vertex->setAttribute('graphviz.fillcolor', 'pink');
                 }
             }
         }
