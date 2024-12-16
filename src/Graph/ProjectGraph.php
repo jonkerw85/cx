@@ -8,6 +8,7 @@ use Fhaculty\Graph\Graph;
 use Fhaculty\Graph\Vertex;
 use Graphp\Algorithms\Search\Base;
 use Graphp\Algorithms\Search\BreadthFirst;
+use Graphp\GraphViz\GraphViz;
 
 final class ProjectGraph
 {
@@ -66,6 +67,24 @@ final class ProjectGraph
         }
 
         return $mermaid;
+    }
+
+    /**
+     * @param list<string> $affectedProjects
+     */
+    public function toDot(array $affectedProjects = []): string
+    {
+        $graph = $this->graph->createGraphClone();
+
+        if (count($affectedProjects) > 0) {
+            foreach ($graph->getVertices() as $vertex) {
+                if (in_array($vertex->getId(), $affectedProjects)) {
+                    $vertex->setAttribute('graphviz.bgcolor', 'pink');
+                }
+            }
+        }
+
+        return (new GraphViz())->createScript($graph);
     }
 
     private function getProjectVertex(string $projectName): ?Vertex

@@ -50,7 +50,7 @@ final class GraphCommand extends BaseCommand
             $affectedProjects = $projectGraph->affected(...$changedProjects);
         }
 
-        $output->write($projectGraph->toMermaid($affectedProjects ?? []));
+        $output->write($projectGraph->toDot($affectedProjects ?? []));
 
         return self::SUCCESS;
     }

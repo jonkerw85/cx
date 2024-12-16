@@ -22,7 +22,8 @@
         "php": "^8.3",
         "composer-plugin-api": "^2.0",
         "clue/graph": "^0.9",
-        "graphp/algorithms": "^0.8.2"
+        "graphp/algorithms": "^0.8.2",
+        "graphp/graphviz": "^0.2.2"
     },
     "require-dev": {
         "composer/composer": "^2.8",
