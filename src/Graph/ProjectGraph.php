@@ -80,6 +80,7 @@ final class ProjectGraph
             foreach ($graph->getVertices() as $vertex) {
                 if (in_array($vertex->getId(), $affectedProjects)) {
                     $vertex->setAttribute('graphviz.fillcolor', 'pink');
+                    $vertex->setAttribute('graphviz.style', 'filled');
                 }
             }
         }
