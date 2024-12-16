@@ -1,0 +1,22 @@
+{
+    "name": "erikgaal/cx",
+    "type": "composer-plugin",
+    "autoload": {
+        "psr-4": {
+            "Cx\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Erik Gaal",
+            "email": "me@erikgaal.nl"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "composer-plugin-api": "^2.0"
+    },
+    "require-dev": {
+        "composer/composer": "^2.8"
+    }
+}
