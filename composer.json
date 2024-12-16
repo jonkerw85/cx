@@ -6,6 +6,11 @@
             "Cx\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Cx\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Erik Gaal",
@@ -14,9 +19,16 @@
     ],
     "require": {
         "php": "^8.3",
-        "composer-plugin-api": "^2.0"
+        "composer-plugin-api": "^2.0",
+        "clue/graph": "^0.9",
+        "graphp/algorithms": "^0.8.2"
     },
     "require-dev": {
-        "composer/composer": "^2.8"
+        "composer/composer": "^2.8",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.5"
+    },
+    "extra": {
+        "class": "Cx\\Plugin"
     }
 }
