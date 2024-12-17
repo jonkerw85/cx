@@ -25,6 +25,7 @@ final class AffectedCommand extends BaseCommand
                 new InputOption('uncommitted', null, InputOption::VALUE_NONE),
                 new InputOption('untracked', null, InputOption::VALUE_NONE),
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
+                new InputOption('filter', mode: InputOption::VALUE_REQUIRED),
             ]);
     }
 
@@ -55,6 +56,11 @@ final class AffectedCommand extends BaseCommand
             $output->write($projectGraph->toMermaid($affectedProjects));
 
             return self::SUCCESS;
+        }
+
+        if ($filteredProjects = $input->getOption('filter')) {
+            $filteredProjects = explode(',', $filteredProjects);
+            $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => in_array($project, $filteredProjects)));
         }
 
         foreach ($affectedProjects as $projectName) {
