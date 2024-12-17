@@ -18,15 +18,15 @@ Run tasks in projects affected by changes.
 composer affected -t test
 ```
 
-| Option           | Description                                          |
-|------------------|------------------------------------------------------|
-| `--base`         | Base of the current branch (usually `main`)          |
-| `--filter`       | Filter certain projects form being processed         |
-| `--graph`        | Show the task graph of the command                   |
-| `--head`         | Latest commit of the current branch (usually `HEAD`) |
-| `--target`, `-t` | Tasks to run for affected projects                   |
-| `--uncommitted`  | Only uncommitted changes                             |
-| `--untracked`    | Only untracked changes                               |
+| Option            | Description                                          |
+|-------------------|------------------------------------------------------|
+| `--base`          | Base of the current branch (usually `main`)          |
+| `--graph`         | Show the task graph of the command                   |
+| `--head`          | Latest commit of the current branch (usually `HEAD`) |
+| `--project`, `-p` | Filter certain projects form being processed         |
+| `--target`, `-t`  | Tasks to run for affected projects                   |
+| `--uncommitted`   | Only uncommitted changes                             |
+| `--untracked`     | Only untracked changes                               |
 
 ### Graph
 
@@ -44,3 +44,16 @@ composer graph
 | `--target`, `-t` | Tasks to run for affected projects                   |
 | `--uncommitted`  | Only uncommitted changes                             |
 | `--untracked`    | Only untracked changes                               |
+
+### Run many
+
+Run tasks in multiple projects.
+
+```bash
+composer run-many -t test
+```
+
+| Option            | Description                        |
+|-------------------|------------------------------------|
+| `--target`, `-t`  | Tasks to run for affected projects |
+| `--project`, `-p` | Projects to run                    |

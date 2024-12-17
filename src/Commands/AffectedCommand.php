@@ -26,7 +26,7 @@ final class AffectedCommand extends BaseCommand
                 new InputOption('uncommitted', mode: InputOption::VALUE_NONE),
                 new InputOption('untracked', mode: InputOption::VALUE_NONE),
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
-                new InputOption('filter', mode: InputOption::VALUE_REQUIRED),
+                new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
             ]);
     }
 
@@ -65,15 +65,14 @@ final class AffectedCommand extends BaseCommand
             return self::SUCCESS;
         }
 
-        if ($filteredProjects = $input->getOption('filter')) {
-            $filteredProjects = explode(',', $filteredProjects);
+        if ($filteredProjects = $input->getOption('project')) {
             $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => in_array($project, $filteredProjects)));
         }
 
         foreach ($affectedProjects as $projectName) {
             $project = $projectGraph->projects[$projectName];
 
-            if (! in_array($input->getOption('target'), $project->scripts)) {
+            if (! in_array($input->getOption('target'), [...$project->scripts, 'install'])) {
                 $output->writeln(
                     sprintf('Skipping task "%s" in "%s"', $input->getOption('target'), $project->name),
                     OutputInterface::VERBOSITY_VERBOSE,

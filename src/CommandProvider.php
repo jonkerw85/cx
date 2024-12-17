@@ -7,6 +7,7 @@ namespace Cx;
 use Composer\Plugin\Capability\CommandProvider as CommandProviderCapability;
 use Cx\Commands\AffectedCommand;
 use Cx\Commands\GraphCommand;
+use Cx\Commands\RunManyCommand;
 
 final readonly class CommandProvider implements CommandProviderCapability
 {
@@ -15,6 +16,7 @@ final readonly class CommandProvider implements CommandProviderCapability
         return [
             new AffectedCommand(),
             new GraphCommand(),
+            new RunManyCommand(),
         ];
     }
 }
