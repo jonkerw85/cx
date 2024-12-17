@@ -18,13 +18,13 @@ final class AffectedCommand extends BaseCommand
     {
         $this->setName('affected')
             ->setDefinition([
-                new InputOption('output', null, InputOption::VALUE_NONE),
-                new InputOption('graph', null, InputOption::VALUE_NONE, 'Display a graph of affected projects.'),
+                new InputOption('output', mode: InputOption::VALUE_NONE),
+                new InputOption('graph', mode: InputOption::VALUE_NONE, description: 'Display a graph of affected projects.'),
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
-                new InputOption('base', null, InputOption::VALUE_OPTIONAL, default: 'main'),
-                new InputOption('head', null, InputOption::VALUE_OPTIONAL),
-                new InputOption('uncommitted', null, InputOption::VALUE_NONE),
-                new InputOption('untracked', null, InputOption::VALUE_NONE),
+                new InputOption('base', mode: InputOption::VALUE_REQUIRED, default: 'main'),
+                new InputOption('head', mode: InputOption::VALUE_REQUIRED),
+                new InputOption('uncommitted', mode: InputOption::VALUE_NONE),
+                new InputOption('untracked', mode: InputOption::VALUE_NONE),
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
                 new InputOption('filter', mode: InputOption::VALUE_REQUIRED),
             ]);

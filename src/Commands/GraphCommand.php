@@ -18,10 +18,10 @@ final class GraphCommand extends BaseCommand
         $this->setName('graph')
             ->setDefinition([
                 new InputOption('affected', mode: InputOption::VALUE_NONE),
-                new InputOption('base', null, InputOption::VALUE_OPTIONAL, default: 'main'),
-                new InputOption('head', null, InputOption::VALUE_OPTIONAL),
-                new InputOption('uncommitted', null, InputOption::VALUE_NONE),
-                new InputOption('untracked', null, InputOption::VALUE_NONE),
+                new InputOption('base', mode: InputOption::VALUE_REQUIRED, default: 'main'),
+                new InputOption('head', mode: InputOption::VALUE_REQUIRED),
+                new InputOption('uncommitted', mode: InputOption::VALUE_NONE),
+                new InputOption('untracked', mode: InputOption::VALUE_NONE),
             ]);
     }
 
