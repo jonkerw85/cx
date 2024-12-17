@@ -18,6 +18,7 @@ final class AffectedCommand extends BaseCommand
     {
         $this->setName('affected')
             ->setDefinition([
+                new InputOption('output', null, InputOption::VALUE_NONE),
                 new InputOption('graph', null, InputOption::VALUE_NONE, 'Display a graph of affected projects.'),
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
                 new InputOption('base', null, InputOption::VALUE_OPTIONAL, default: 'main'),
@@ -51,6 +52,12 @@ final class AffectedCommand extends BaseCommand
         }
 
         $affectedProjects = $projectGraph->affected(...$projectsWithChanges);
+
+        if ($input->getOption('output')) {
+            $output->write(implode(PHP_EOL, $affectedProjects));
+
+            return self::SUCCESS;
+        }
 
         if ($input->getOption('graph')) {
             $output->write($projectGraph->toMermaid($affectedProjects));
