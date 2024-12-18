@@ -20,6 +20,7 @@ final class RunManyCommand extends BaseCommand
             ->setDefinition([
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
                 new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+                new InputOption('bail', mode: InputOption::VALUE_NONE),
             ]);
     }
 
@@ -32,6 +33,8 @@ final class RunManyCommand extends BaseCommand
         if ($filteredProjects = $input->getOption('project')) {
             $projects = array_values(array_filter($projects, fn(Project $project) => in_array($project->name, $filteredProjects)));
         }
+
+        $failed = false;
 
         foreach ($projects as $project) {
             if (! in_array($input->getOption('target'), [...$project->scripts, 'install'])) {
@@ -55,9 +58,17 @@ final class RunManyCommand extends BaseCommand
             $process->run(fn($type, $buffer) => $output->write($buffer));
 
             $process->wait();
+
+            if (! $process->isSuccessful()) {
+                $failed = true;
+
+                if ($input->getOption('bail')) {
+                    return $process->getExitCode();
+                }
+            }
         }
 
-        return self::SUCCESS;
+        return $failed ? self::FAILURE : self::SUCCESS;
     }
 
     public function isProxyCommand(): bool
