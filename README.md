@@ -21,9 +21,10 @@ composer affected -t test
 | Option            | Description                                          |
 |-------------------|------------------------------------------------------|
 | `--base`          | Base of the current branch (usually `main`)          |
+| `--exclude`       | Exclude certains projects from being processed       |
 | `--graph`         | Show the task graph of the command                   |
 | `--head`          | Latest commit of the current branch (usually `HEAD`) |
-| `--project`, `-p` | Filter certain projects form being processed         |
+| `--project`, `-p` | Filter certain projects from being processed         |
 | `--target`, `-t`  | Tasks to run for affected projects                   |
 | `--uncommitted`   | Only uncommitted changes                             |
 | `--untracked`     | Only untracked changes                               |

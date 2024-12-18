@@ -27,6 +27,7 @@ final class AffectedCommand extends BaseCommand
                 new InputOption('untracked', mode: InputOption::VALUE_NONE),
                 new InputOption('target', 't', InputOption::VALUE_REQUIRED),
                 new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+                new InputOption('exclude', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
             ]);
     }
 
@@ -67,6 +68,10 @@ final class AffectedCommand extends BaseCommand
 
         if ($filteredProjects = $input->getOption('project')) {
             $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => in_array($project, $filteredProjects)));
+        }
+
+        if ($excludedProjects = $input->getOption('exclude')) {
+            $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => ! in_array($project, $excludedProjects)));
         }
 
         foreach ($affectedProjects as $projectName) {
