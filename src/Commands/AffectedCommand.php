@@ -54,6 +54,14 @@ final class AffectedCommand extends BaseCommand
 
         $affectedProjects = $projectGraph->affected(...$projectsWithChanges);
 
+        if ($filteredProjects = $input->getOption('project')) {
+            $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => in_array($project, $filteredProjects)));
+        }
+
+        if ($excludedProjects = $input->getOption('exclude')) {
+            $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => ! in_array($project, $excludedProjects)));
+        }
+
         if ($input->getOption('output')) {
             $output->write(implode(PHP_EOL, $affectedProjects));
 
@@ -61,17 +69,9 @@ final class AffectedCommand extends BaseCommand
         }
 
         if ($input->getOption('graph')) {
-            $output->write($projectGraph->toMermaid($affectedProjects));
+            $output->write($projectGraph->toDot($affectedProjects));
 
             return self::SUCCESS;
-        }
-
-        if ($filteredProjects = $input->getOption('project')) {
-            $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => in_array($project, $filteredProjects)));
-        }
-
-        if ($excludedProjects = $input->getOption('exclude')) {
-            $affectedProjects = array_values(array_filter($affectedProjects, fn(string $project) => ! in_array($project, $excludedProjects)));
         }
 
         foreach ($affectedProjects as $projectName) {
