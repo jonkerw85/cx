@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-$autoloader = require(__DIR__ . '/vendor/autoload.php');
+$autoloader = file_exists(__DIR__ . '/vendor/autoload.php') ? require(__DIR__ . '/vendor/autoload.php') : require(__DIR__ . '/../../autoload.php');
 
 use Cx\Commands;
 use Symfony\Component\Console\Application;
