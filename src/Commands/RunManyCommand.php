@@ -4,77 +4,112 @@ declare(strict_types=1);
 
 namespace Cx\Commands;
 
+use Carbon\Carbon;
+use Composer\Console\Input\InputArgument;
 use Cx\Graph\Project;
 use Cx\Graph\ProjectGraphFactory;
+use Cx\Utils\Spinner;
+use Cx\Utils\Task;
+use Cx\Utils\TaskCollection;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Number;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Command\SignalableCommandInterface;
+use Symfony\Component\Console\Helper\Dumper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
+
+use Twig\Environment;
+
+use Twig\Extra\Html\HtmlExtension;
+
+use Twig\Loader\FilesystemLoader;
+
+use function Termwind\parse;
 
 #[AsCommand(name: 'run-many')]
 final class RunManyCommand extends Command
 {
     protected function configure(): void
     {
-        $this->setName('run-many')
-            ->setDefinition([
-                new InputOption('target', 't', InputOption::VALUE_REQUIRED),
-                new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
-                new InputOption('bail', mode: InputOption::VALUE_NONE),
-            ]);
+        $this->setDefinition([
+            new InputArgument('target', mode:  InputArgument::REQUIRED | InputArgument::IS_ARRAY),
+            new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('bail', mode: InputOption::VALUE_NONE),
+        ]);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (!$output instanceof ConsoleOutputInterface) {
+            throw new \LogicException('This command accepts only an instance of "ConsoleOutputInterface".');
+        }
+
         $projectGraph = ProjectGraphFactory::createProjectGraph();
 
         $projects = $projectGraph->projects;
 
         if ($filteredProjects = $input->getOption('project')) {
-            $projects = array_values(array_filter($projects, fn(Project $project) => in_array($project->name, $filteredProjects)));
+            $projects = array_values(
+                array_filter($projects, fn(Project $project) => in_array($project->name, $filteredProjects)),
+            );
         }
 
-        $failed = false;
+        $section = $output->section();
 
-        foreach ($projects as $project) {
-            if (! in_array($input->getOption('target'), [...$project->scripts, 'install'])) {
-                $output->writeln(
-                    sprintf('Skipping task "%s" in "%s"', $input->getOption('target'), $project->name),
-                    OutputInterface::VERBOSITY_VERBOSE,
-                );
+        $tasksToRun = collect($projects)
+            ->flatMap(fn(Project $project)
+                => collect([...$project->scripts, 'install', 'validate'])
+                ->filter(fn(string $script) => Str::is($input->getArgument('target'), $script))
+                ->map(fn(string $script) => [$project, $script]));
 
-                continue;
-            }
+        if ($tasksToRun->isEmpty()) {
+            $section->writeln(parse('<p><strong class="bg-gray">&nbsp;Cx&nbsp;</strong> No tasks were run</p>'));
 
-            $output->writeln(sprintf('Running task "%s" in "%s"', $input->getOption('target'), $project->name));
-
-            $process = (new Process([
-                'composer',
-                "--working-dir=./{$project->root}",
-                ...$input->isInteractive() ? ["--ansi"] : [],
-                $input->getOption('target'),
-            ]));
-
-            $process->run(fn($type, $buffer) => $output->write($buffer));
-
-            $process->wait();
-
-            if (! $process->isSuccessful()) {
-                $failed = true;
-
-                if ($input->getOption('bail')) {
-                    return $process->getExitCode();
-                }
-            }
+            return self::SUCCESS;
         }
 
-        return $failed ? self::FAILURE : self::SUCCESS;
-    }
+        $tasks = new TaskCollection($tasksToRun->map(function (array $task) {
+            [$project, $task] = $task;
 
-    public function isProxyCommand(): bool
-    {
-        return true;
+            return new Task(
+                project: $project,
+                target: $task,
+                process: new Process([
+                    'composer',
+                    $task,
+                ], realpath($project->root) ?: null),
+            );
+        }));
+
+        $tasks->each(fn(Task $task) => $task->start());
+
+        Spinner::with(function (Spinner $spinner) use ($input, $section, $tasks) {
+            $twig = new Environment(new FilesystemLoader(__DIR__ . '/../../resources/views'));
+            $twig->addExtension(new HtmlExtension());
+            $html = $twig->render('run-many-output.twig', [
+                'tasks' => $tasks,
+                'projects' => $tasks->projects(),
+                'spinner' => $spinner,
+                'targets' => collect($input->getArgument('target')),
+            ]);
+
+            $section->overwrite(parse($html));
+
+            if ($input->getOption('bail') && $tasks->failed()->isNotEmpty()) {
+                $spinner->stop();
+            }
+
+            if ($tasks->remaining()->isEmpty()) {
+                $spinner->stop();
+            }
+        });
+
+        return $tasks->failed()->isEmpty() ? self::SUCCESS : self::FAILURE;
     }
 }

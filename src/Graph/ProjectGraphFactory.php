@@ -40,7 +40,7 @@ final class ProjectGraphFactory
              *     scripts?: array<string, mixed>
              *  } $projectComposerConfig
              */
-            $projectComposerConfig = JsonFile::parseJson($projectComposerRoot->getContents());
+            $projectComposerConfig = json_decode($projectComposerRoot->getContents(), associative: true);
 
             $projectName = $projectComposerConfig['name'] ?? throw new RuntimeException('Composer file does not contain a name');
 
