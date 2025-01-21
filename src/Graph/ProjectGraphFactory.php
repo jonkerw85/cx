@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cx\Graph;
 
-use Composer\Json\JsonFile;
 use Fhaculty\Graph\Graph;
 use RuntimeException;
 use Symfony\Component\Finder\Finder;
