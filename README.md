@@ -52,10 +52,11 @@ composer graph
 Run tasks in multiple projects.
 
 ```bash
-composer run-many -t test
+composer run-many [target]...
 ```
 
-| Option            | Description                        |
-|-------------------|------------------------------------|
-| `--target`, `-t`  | Tasks to run for affected projects |
-| `--project`, `-p` | Projects to run                    |
+| Option            | Description                                                                                                                                                                  |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--project`, `-p` | Projects to run                                                                                                                                                              |
+| `--parallel`      | Run tasks in parallel                                                                                                                                                        |
+| `--outputStyle`   | How task output should be displayed.<br/>`dynamic`: recommended for local development, overwrites previous output<br/>`static`: recommended for CI, no output is overwritten |

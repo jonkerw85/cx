@@ -29,7 +29,6 @@ final class RunManyCommand extends Command
         $this->setDefinition([
             new InputArgument('target', mode:  InputArgument::REQUIRED | InputArgument::IS_ARRAY),
             new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
-            new InputOption('bail', mode: InputOption::VALUE_NONE),
             new InputOption('parallel', mode: InputOption::VALUE_REQUIRED, default: 3),
             new InputOption('outputStyle', mode: InputOption::VALUE_REQUIRED, default: 'dynamic', suggestedValues: ['dynamic', 'static']),
         ]);
