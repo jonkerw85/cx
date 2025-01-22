@@ -7,7 +7,7 @@ composer.lock
 
 # Logs
 npm-debug.log
-yarn-error.log
+yarn-error.logg
 
 # Caches
 .phpunit.cache
