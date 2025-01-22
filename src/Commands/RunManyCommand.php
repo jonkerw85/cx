@@ -6,9 +6,10 @@ namespace Cx\Commands;
 
 use Cx\Graph\Project;
 use Cx\Graph\ProjectGraphFactory;
-use Cx\Utils\Spinner;
-use Cx\Utils\Task;
-use Cx\Utils\TaskCollection;
+use Cx\Tasks\Renderer\InteractiveRenderer;
+use Cx\Tasks\Renderer\StaticRenderer;
+use Cx\Tasks\TaskRunner;
+use Cx\Tasks\TaskRunnerOptions;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -17,15 +18,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\Process;
-
 use Twig\Environment;
-
-use Twig\Extra\Html\HtmlExtension;
-
 use Twig\Loader\FilesystemLoader;
-
-use function Termwind\parse;
 
 #[AsCommand(name: 'run-many')]
 final class RunManyCommand extends Command
@@ -36,75 +30,33 @@ final class RunManyCommand extends Command
             new InputArgument('target', mode:  InputArgument::REQUIRED | InputArgument::IS_ARRAY),
             new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
             new InputOption('bail', mode: InputOption::VALUE_NONE),
+            new InputOption('parallel', mode: InputOption::VALUE_REQUIRED, default: 3),
+            new InputOption('outputStyle', mode: InputOption::VALUE_REQUIRED, default: 'dynamic', suggestedValues: ['dynamic', 'static']),
         ]);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$output instanceof ConsoleOutputInterface) {
-            throw new \LogicException('This command accepts only an instance of "ConsoleOutputInterface".');
-        }
-
         $projectGraph = ProjectGraphFactory::createProjectGraph();
 
-        $projects = $projectGraph->projects;
+        $twig = new Environment(new FilesystemLoader(__DIR__ . '/../../resources/views'));
 
-        if ($filteredProjects = $input->getOption('project')) {
-            $projects = array_values(
-                array_filter($projects, fn(Project $project) => in_array($project->name, $filteredProjects)),
-            );
-        }
+        $renderer = match (true) {
+            ! $input->isInteractive() || ! $output instanceof ConsoleOutputInterface => new StaticRenderer($output),
+            $input->getOption('outputStyle') === 'dynamic' => new InteractiveRenderer($output, $twig),
+            default => new StaticRenderer($output),
+        };
 
-        $section = $output->section();
+        $taskRunner = new TaskRunner(
+            renderer: $renderer,
+        );
 
-        $tasksToRun = collect($projects)
-            ->flatMap(fn(Project $project)
-                => collect([...$project->scripts, 'install', 'validate'])
-                ->filter(fn(string $script) => Str::is($input->getArgument('target'), $script))
-                ->map(fn(string $script) => [$project, $script]));
+        $taskRunner->run(new TaskRunnerOptions(
+            projectGraph: $projectGraph,
+            targets: $input->getArgument('target'),
+            parallel: (int) $input->getOption('parallel'),
+        ));
 
-        if ($tasksToRun->isEmpty()) {
-            $section->writeln(parse('<p><strong class="bg-gray">&nbsp;Cx&nbsp;</strong> No tasks were run</p>'));
-
-            return self::SUCCESS;
-        }
-
-        $tasks = new TaskCollection($tasksToRun->map(function (array $task) {
-            [$project, $task] = $task;
-
-            return new Task(
-                project: $project,
-                target: $task,
-                process: new Process([
-                    'composer',
-                    $task,
-                ], realpath($project->root) ?: null),
-            );
-        }));
-
-        $tasks->each(fn(Task $task) => $task->start());
-
-        Spinner::with(function (Spinner $spinner) use ($input, $section, $tasks) {
-            $twig = new Environment(new FilesystemLoader(__DIR__ . '/../../resources/views'));
-            $twig->addExtension(new HtmlExtension());
-            $html = $twig->render('run-many-output.twig', [
-                'tasks' => $tasks,
-                'projects' => $tasks->projects(),
-                'spinner' => $spinner,
-                'targets' => collect($input->getArgument('target')),
-            ]);
-
-            $section->overwrite(parse($html));
-
-            if ($input->getOption('bail') && $tasks->failed()->isNotEmpty()) {
-                $spinner->stop();
-            }
-
-            if ($tasks->remaining()->isEmpty()) {
-                $spinner->stop();
-            }
-        });
-
-        return $tasks->failed()->isEmpty() ? self::SUCCESS : self::FAILURE;
+        return self::SUCCESS;
     }
 }

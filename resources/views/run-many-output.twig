@@ -1,24 +1,26 @@
-<div class="space-y-1">
+<div class="my-1 space-y-1">
     <div class="space-x-2">
         {% set targetsLabel = targets.containsOneItem() ? "target" : "targets" %}
         {% set projectsLabel = projects.containsOneItem() ? "project #{projects.first().name}" : "#{projects.count()} projects" %}
         {% if tasks.remaining().isNotEmpty() %}
-            <span class="bg-blue">&nbsp;Cx&nbsp;</span><span class="text-blue">Running {{ targetsLabel }} <strong>{{ targets|join(', ') }}</strong> for {{ projectsLabel }}.</span>
+            <div class="bg-blue px-1">Cx</div><span class="text-blue">Running {{ targetsLabel }} <strong>{{ targets|join(', ') }}</strong> for {{ projectsLabel }}</span>
         {% elseif tasks.remaining().isEmpty() and tasks.failed().isEmpty() %}
-            <span class="bg-green">&nbsp;Cx&nbsp;</span><span class="text-green">Successfully ran {{ targetsLabel }} <strong>{{ targets|join(', ') }}</strong> for {{ projectsLabel }}.</span>
+            <div class="bg-green px-1">Cx</div><span class="text-green">Successfully ran {{ targetsLabel }} <strong>{{ targets|join(', ') }}</strong> for {{ projectsLabel }}</span>
         {% elseif tasks.remaining().isEmpty() and tasks.failed().isNotEmpty() %}
-            <span class="bg-red">&nbsp;Cx&nbsp;</span><span class="text-red">Ran {{ targetsLabel }} <strong>{{ targets|join(', ') }}</strong> for {{ projectsLabel }}.</span>
+            <div class="bg-red px-1">Cx</div><span class="text-red">Running {{ targetsLabel }} <strong>{{ targets|join(', ') }}</strong> for {{ projectsLabel }} failed</span>
         {% endif %}
     </div>
 
-    <div class='pl-3 space-y-1'>
+    <div class='ml-3 space-y-1'>
         {% if tasks.remaining().isNotEmpty() %}
-            <div><span class='mr-2 text-blue'>→</span>Executing {{ tasks.remaining().count() }} remaining {{ tasks.containsOneItem() ? 'task' : 'tasks' }}...</div>
+            <div><span class='mr-2 text-blue'>→</span>Executing {{ tasks.running().count() }}/{{ tasks.remaining().count() }} remaining {{ tasks.containsOneItem() ? 'task' : 'tasks' }}...</div>
         {% endif %}
         <ul class='list-none'>
             {% for task in tasks %}
                 <li class="space-x-2">
-                    {% if task.process.isRunning() %}
+                    {% if not task.process.isStarted() %}
+                        <span>&nbsp;</span>
+                    {% elseif task.process.isRunning() %}
                         <span class="text-blue">{{ spinner }}</span>
                     {% elseif task.process.isSuccessful() %}
                         <span class="text-green">✔</span>

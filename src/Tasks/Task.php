@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Cx\Utils;
+namespace Cx\Tasks;
 
 use Cx\Graph\Project;
 use Symfony\Component\Process\Process;
