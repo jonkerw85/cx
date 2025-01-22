@@ -6,11 +6,12 @@ namespace Cx\Tasks\Renderer;
 
 use Cx\Tasks\Task;
 use Cx\Tasks\TaskCollection;
-use Cx\Tasks\TaskRunner;
 use Cx\Tasks\TaskRunnerOptions;
 
 interface Renderer
 {
+    public function nothingToRun(TaskRunnerOptions $options, TaskCollection $tasks): void;
+
     public function started(TaskRunnerOptions $options, TaskCollection $tasks): void;
 
     public function taskStarted(TaskRunnerOptions $options, Task $task): void;

@@ -6,7 +6,6 @@ namespace Cx\Tasks\Renderer;
 
 use Cx\Tasks\Task;
 use Cx\Tasks\TaskCollection;
-use Cx\Tasks\TaskRunner;
 use Cx\Tasks\TaskRunnerOptions;
 use Cx\Utils\Spinner;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
@@ -57,5 +56,14 @@ final readonly class InteractiveRenderer implements Renderer
 
     public function finished(TaskRunnerOptions $options, TaskCollection $tasks): void
     {
+    }
+
+    public function nothingToRun(TaskRunnerOptions $options, TaskCollection $tasks): void
+    {
+        $this->section->writeln(<<<TXT
+
+<bg=gray> Cx </>  <fg=gray>No tasks were run</>
+
+TXT);
     }
 }

@@ -24,6 +24,12 @@ final class TaskRunner
         $tasks = $this->prepareTasks($options);
         $this->finishedTasks = [];
 
+        if ($tasks->isEmpty()) {
+            $this->renderer->nothingToRun($options, $tasks);
+
+            return;
+        }
+
         $this->renderer->started($options, $tasks);
 
         do {
