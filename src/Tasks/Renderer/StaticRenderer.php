@@ -63,7 +63,7 @@ TXT);
 
 TXT);
 
-            $this->output->writeln($task->process->getErrorOutput());
+            $this->output->writeln($task->getCombinedOutput());
         }
     }
 
