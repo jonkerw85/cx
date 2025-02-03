@@ -50,13 +50,13 @@ final class RunManyCommand extends Command
             renderer: $renderer,
         );
 
-        $taskRunner->run(new TaskRunnerOptions(
+        $result = $taskRunner->run(new TaskRunnerOptions(
             projectGraph: $projectGraph,
             targets: $input->getArgument('target'),
             projects: $input->getOption('project'),
             parallel: (int) $input->getOption('parallel'),
         ));
 
-        return self::SUCCESS;
+        return $result;
     }
 }

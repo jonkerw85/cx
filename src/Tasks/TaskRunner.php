@@ -19,7 +19,7 @@ final class TaskRunner
         private readonly Renderer $renderer,
     ) {}
 
-    public function run(TaskRunnerOptions $options): void
+    public function run(TaskRunnerOptions $options): int
     {
         $tasks = $this->prepareTasks($options);
         $this->finishedTasks = [];
@@ -27,7 +27,7 @@ final class TaskRunner
         if ($tasks->isEmpty()) {
             $this->renderer->nothingToRun($options, $tasks);
 
-            return;
+            return 1;
         }
 
         $this->renderer->started($options, $tasks);
@@ -61,6 +61,8 @@ final class TaskRunner
         } while (true);
 
         $this->renderer->finished($options, $tasks);
+
+        return $tasks->failed()->isEmpty() ? 0 : 1;
     }
 
     /**
