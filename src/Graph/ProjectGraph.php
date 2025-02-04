@@ -18,6 +18,13 @@ final class ProjectGraph
         public readonly Graph $graph,
     ) {}
 
+    public function getRoot(): Project
+    {
+        return collect($this->projects)
+            ->sortBy(fn ($project) => mb_strlen($project->root))
+            ->first();
+    }
+
     /**
      * @param string ...$projectsWithChanges
      * @return list<string>
