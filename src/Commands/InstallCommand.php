@@ -53,7 +53,7 @@ final class InstallCommand extends Command
 
             try {
                 (new Process(
-                    ['composer', 'update', '--no-install', ...$projects->pluck('name')],
+                    ['composer', 'update', ...$projects->pluck('name')],
                     cwd: $project->root,
                 ))->mustRun(fn ($_, $buf) => $output->write($buf));
 
