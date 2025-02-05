@@ -55,7 +55,7 @@ final class InstallCommand extends Command
                 (new Process(
                     ['composer', 'remove', '--unused'],
                     cwd: $project->root,
-                ))->run();
+                ))->run(fn ($_, $buf) => $output->write($buf));
             } finally {
                 $filesystem->remove($projectComposerLock);
             }
