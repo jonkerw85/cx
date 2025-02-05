@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cx\Commands;
 
-use Cx\Graph\Project;
 use Cx\Graph\ProjectGraphFactory;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -13,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 #[AsCommand(name: 'install')]
@@ -52,10 +52,14 @@ final class InstallCommand extends Command
             );
 
             try {
-                (new Process(
+                $process = (new Process(
                     ['composer', 'remove', '--unused'],
                     cwd: $project->root,
-                ))->run(fn ($_, $buf) => $output->write($buf));
+                ));
+
+                if (! in_array($process->run(fn ($_, $buf) => $output->write($buf)), [0, 2])) {
+                    throw new ProcessFailedException($process);
+                }
             } finally {
                 $filesystem->remove($projectComposerLock);
             }
