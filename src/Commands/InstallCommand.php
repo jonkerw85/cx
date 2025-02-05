@@ -47,7 +47,7 @@ final class InstallCommand extends Command
             $output->writeln("Installing dependencies from lock file for {$project->name}");
 
             $filesystem->copy(
-                $rootProject->root . '/composer.lock',
+                'composer.lock',
                 $projectComposerLock = $project->root . '/composer.lock',
             );
 

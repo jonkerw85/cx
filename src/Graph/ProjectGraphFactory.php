@@ -45,7 +45,7 @@ final class ProjectGraphFactory
 
             $factory->addProject(new Project(
                 name: $projectName,
-                root: dirname($projectComposerRoot->getRealPath()),
+                root: $projectComposerRoot->getRelativePath(),
                 scripts: array_keys($projectComposerConfig['scripts'] ?? []),
             ));
 
