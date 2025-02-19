@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cx\Commands;
 
+use Cx\Graph\Project;
 use Cx\Graph\ProjectGraphFactory;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -39,37 +40,49 @@ final class InstallCommand extends Command
                 fn(Collection $projects) => $projects->whereIn('name', $input->getOption('project')),
             );
 
-        foreach ($projects as $project) {
-            if ($project === $rootProject) {
-                continue;
-            }
+        $results = $projects
+            ->reject(fn(Project $project) => $project === $rootProject)
+            ->map(fn (Project $project) => $this->installProject($output, $project, $filesystem));
 
-            $output->writeln("Installing dependencies from lock file for {$project->name}");
+        return $results->contains(self::FAILURE) ? self::FAILURE : self::SUCCESS;
+    }
 
-            $filesystem->copy(
-                'composer.lock',
-                $projectComposerLock = $project->root . '/composer.lock',
-            );
+    private function installProject(OutputInterface $output, mixed $project, Filesystem $filesystem): int
+    {
+        $output->writeln("Installing dependencies for {$project->name}");
 
-            try {
-                (new Process(
-                    ['composer', 'update', ...$projects->pluck('name')],
-                    cwd: $project->root,
-                ))->mustRun(fn ($_, $buf) => $output->write($buf));
+        $filesystem->copy(
+            'composer.lock',
+            $projectComposerLock = $project->root . '/composer.lock',
+            overwriteNewerFiles: true,
+        );
 
-                $process = (new Process(
-                    ['composer', 'remove', '--unused'],
-                    cwd: $project->root,
-                ));
+        $projectComposerLockContents = json_decode(file_get_contents($projectComposerLock));
 
-                if (! in_array($process->run(fn ($_, $buf) => $output->write($buf)), [0, 2])) {
-                    throw new ProcessFailedException($process);
-                }
-            } finally {
-                $filesystem->remove($projectComposerLock);
-            }
+        $lockedPackages = collect($projectComposerLockContents->packages)
+            ->pluck('version', 'name')
+            ->except($project->name);
+
+        $replacedPackages = collect($projectComposerLockContents->packages)
+            ->flatMap(function (object $package) {
+                return collect($package->replace ?? [])
+                    ->filter(fn(string $version) => $version === 'self.version')
+                    ->mapWithKeys(fn(string $_, string $replaced) => [$replaced => $package->version]);
+            });
+
+        try {
+            $command = ['composer', 'update', ...$lockedPackages->merge($replacedPackages)->map(fn($version, $package) => "{$package}:{$version}")];
+
+            (new Process(
+                $command,
+                cwd: $project->root,
+            ))->mustRun(fn($_, $buf) => $output->write($buf, false, OutputInterface::VERBOSITY_VERBOSE));
+
+            return self::SUCCESS;
+        } catch (ProcessFailedException $e) {
+            return self::FAILURE;
+        } finally {
+            $filesystem->remove($projectComposerLock);
         }
-
-        return self::SUCCESS;
     }
 }
