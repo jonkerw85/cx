@@ -43,7 +43,7 @@ final class InstallCommand extends Command
             );
 
         $results = $projects
-            ->reject(fn(Project $project) => $project === $rootProject)
+            ->reject(fn(Project $project) => !$input->getOption('project') && $project === $rootProject)
             ->map(fn (Project $project) => $this->installProject($output, $project, $projectGraph, $filesystem));
 
         return $results->contains(self::FAILURE) ? self::FAILURE : self::SUCCESS;
