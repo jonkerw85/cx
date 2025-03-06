@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Cx\Commands;
 
 use Cx\Graph\Project;
+use Cx\Graph\ProjectGraph;
 use Cx\Graph\ProjectGraphFactory;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -42,12 +44,12 @@ final class InstallCommand extends Command
 
         $results = $projects
             ->reject(fn(Project $project) => $project === $rootProject)
-            ->map(fn (Project $project) => $this->installProject($output, $project, $filesystem));
+            ->map(fn (Project $project) => $this->installProject($output, $project, $projectGraph, $filesystem));
 
         return $results->contains(self::FAILURE) ? self::FAILURE : self::SUCCESS;
     }
 
-    private function installProject(OutputInterface $output, mixed $project, Filesystem $filesystem): int
+    private function installProject(OutputInterface $output, mixed $project, ProjectGraph $projectGraph, Filesystem $filesystem): int
     {
         $output->writeln("Installing dependencies for {$project->name}");
 
@@ -61,6 +63,7 @@ final class InstallCommand extends Command
 
         $lockedPackages = collect($projectComposerLockContents->packages)
             ->pluck('version', 'name')
+            ->merge(Arr::mapWithKeys($projectGraph->projects, fn (Project $project) => [$project->name => '*']))
             ->except($project->name);
 
         $replacedPackages = collect($projectComposerLockContents->packages)
@@ -72,6 +75,8 @@ final class InstallCommand extends Command
 
         try {
             $command = ['composer', 'update', ...$lockedPackages->merge($replacedPackages)->map(fn($version, $package) => "{$package}:{$version}")];
+
+            $output->writeln(implode(' ', $command), OutputInterface::VERBOSITY_VERBOSE);
 
             (new Process(
                 $command,
