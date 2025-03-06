@@ -49,9 +49,25 @@ final class InstallCommand extends Command
         return $results->contains(self::FAILURE) ? self::FAILURE : self::SUCCESS;
     }
 
-    private function installProject(OutputInterface $output, mixed $project, ProjectGraph $projectGraph, Filesystem $filesystem): int
+    private function installProject(OutputInterface $output, Project $project, ProjectGraph $projectGraph, Filesystem $filesystem): int
     {
         $output->writeln("Installing dependencies for {$project->name}");
+
+        if ($project->isRoot()) {
+            try {
+                $command = ['composer', 'install'];
+
+                $output->writeln(implode(' ', $command), OutputInterface::VERBOSITY_VERBOSE);
+
+                (new Process(
+                    $command,
+                ))->mustRun(fn($_, $buf) => $output->write($buf, false, OutputInterface::VERBOSITY_VERBOSE));
+
+                return self::SUCCESS;
+            } catch (ProcessFailedException $e) {
+                return self::FAILURE;
+            }
+        }
 
         $filesystem->copy(
             'composer.lock',
