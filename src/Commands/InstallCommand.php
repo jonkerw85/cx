@@ -21,7 +21,7 @@ use Symfony\Component\Process\Process;
 #[AsCommand(name: 'install')]
 final class InstallCommand extends Command
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDefinition([
             new InputOption('project', 'p', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -44,31 +44,36 @@ final class InstallCommand extends Command
 
         $results = $projects
             ->reject(fn(Project $project) => !$input->getOption('project') && $project === $rootProject)
-            ->map(fn (Project $project) => $this->installProject($output, $project, $projectGraph, $filesystem));
+            ->map(function (Project $project) use ($output, $projectGraph, $filesystem) {
+                $output->writeln("Installing dependencies for {$project->name}");
+
+                if ($project->isRoot()) {
+                    return $this->installRootProject($output);
+                }
+
+                return $this->installProject($filesystem, $project, $projectGraph, $output);
+            });
 
         return $results->contains(self::FAILURE) ? self::FAILURE : self::SUCCESS;
     }
 
-    private function installProject(OutputInterface $output, Project $project, ProjectGraph $projectGraph, Filesystem $filesystem): int
+    private function installRootProject(OutputInterface $output): int
     {
-        $output->writeln("Installing dependencies for {$project->name}");
+        try {
+            $command = ['composer', 'install'];
 
-        if ($project->isRoot()) {
-            try {
-                $command = ['composer', 'install'];
+            $output->writeln(implode(' ', $command), OutputInterface::VERBOSITY_VERBOSE);
 
-                $output->writeln(implode(' ', $command), OutputInterface::VERBOSITY_VERBOSE);
+            (new Process($command))->mustRun(fn($_, $buf) => $output->write($buf, false, OutputInterface::VERBOSITY_VERBOSE));
 
-                (new Process(
-                    $command,
-                ))->mustRun(fn($_, $buf) => $output->write($buf, false, OutputInterface::VERBOSITY_VERBOSE));
-
-                return self::SUCCESS;
-            } catch (ProcessFailedException $e) {
-                return self::FAILURE;
-            }
+            return self::SUCCESS;
+        } catch (ProcessFailedException $e) {
+            return self::FAILURE;
         }
+    }
 
+    private function installProject(Filesystem $filesystem, Project $project, ProjectGraph $projectGraph, OutputInterface $output): int
+    {
         $filesystem->copy(
             'composer.lock',
             $projectComposerLock = $project->root . '/composer.lock',
@@ -79,7 +84,7 @@ final class InstallCommand extends Command
 
         $lockedPackages = collect($projectComposerLockContents->packages)
             ->pluck('version', 'name')
-            ->merge(Arr::mapWithKeys($projectGraph->projects, fn (Project $project) => [$project->name => '*']))
+            ->merge(Arr::mapWithKeys($projectGraph->projects, fn(Project $project) => [$project->name => '*']))
             ->except($project->name);
 
         $replacedPackages = collect($projectComposerLockContents->packages)
@@ -90,7 +95,11 @@ final class InstallCommand extends Command
             });
 
         try {
-            $command = ['composer', 'update', ...$lockedPackages->merge($replacedPackages)->map(fn($version, $package) => "{$package}:{$version}")];
+            $command = [
+                'composer',
+                'update',
+                ...$lockedPackages->merge($replacedPackages)->map(fn($version, $package) => "{$package}:{$version}")
+            ];
 
             $output->writeln(implode(' ', $command), OutputInterface::VERBOSITY_VERBOSE);
 
